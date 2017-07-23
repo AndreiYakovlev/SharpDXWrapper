@@ -6,17 +6,24 @@
 // Last Modified By : Andrew
 // Last Modified On : 07-21-2017
 // ***********************************************************************
-// <copyright file="Camera.cs" company="">
-//     Copyright ©  2017
-// </copyright>
-// <summary></summary>
-// ***********************************************************************
 using SharpDX;
 
 namespace SharpDXWrapper
 {
 	/// <summary>
-	/// Class Camera.
+	/// Defines a method that allows you to obtain a projection matrix.
+	/// </summary>
+	public interface IProjectionCamera
+	{
+		/// <summary>
+		/// Gets the projection matrix.
+		/// </summary>
+		/// <value>The projection.</value>
+		Matrix Projection { get; }
+	}
+
+	/// <summary>
+	/// Create a camera for obtaining view matrix.
 	/// </summary>
 	public abstract class Camera
 	{
@@ -33,7 +40,7 @@ namespace SharpDXWrapper
 		public Vector3 Target { get; set; }
 
 		/// <summary>
-		/// Gets the view.
+		/// Gets the view matrix.
 		/// </summary>
 		/// <value>The view.</value>
 		public Matrix View
@@ -76,7 +83,7 @@ namespace SharpDXWrapper
 	}
 
 	/// <summary>
-	/// Class FirstPersonCamera.
+	/// Class FirstPersonCamera. Create a first person camera for obtaining view matrix.
 	/// </summary>
 	/// <seealso cref="SharpDXWrapper.Camera" />
 	public class FirstPersonCamera : Camera
@@ -156,7 +163,7 @@ namespace SharpDXWrapper
 	}
 
 	/// <summary>
-	/// Class ThirdPersonCamera.
+	/// Class ThirdPersonCamera. Create a third person camera for obtaining view matrix.
 	/// </summary>
 	/// <seealso cref="SharpDXWrapper.Camera" />
 	public class ThirdPersonCamera : Camera
@@ -239,19 +246,7 @@ namespace SharpDXWrapper
 	}
 
 	/// <summary>
-	/// Interface IProjectionCamera
-	/// </summary>
-	public interface IProjectionCamera
-	{
-		/// <summary>
-		/// Gets the projection.
-		/// </summary>
-		/// <value>The projection.</value>
-		Matrix Projection { get; }
-	}
-
-	/// <summary>
-	/// Class PerspectiveCamera.
+	/// Create a perspective camera for obtaining projection matrix.
 	/// </summary>
 	/// <seealso cref="SharpDXWrapper.IProjectionCamera" />
 	public class PerspectiveCamera : IProjectionCamera
@@ -309,7 +304,7 @@ namespace SharpDXWrapper
 	}
 
 	/// <summary>
-	/// Class OrthogonalCamera.
+	/// Create a orthogonal camera for obtaining projection matrix.
 	/// </summary>
 	/// <seealso cref="SharpDXWrapper.IProjectionCamera" />
 	public class OrthogonalCamera : IProjectionCamera

@@ -13,16 +13,41 @@ using D3D11 = SharpDX.Direct3D11;
 
 namespace SharpDXWrapper
 {
+	/// <summary>
+	/// Create vertex and pixel shader from loaded shader file
+	/// </summary>
+	/// <seealso cref="System.IDisposable" />
+	/// <seealso cref="SharpDXWrapper.IApply{T}" />
 	public class Shader : IDisposable, IApply<D3D11.DeviceContext>
 	{
+		/// <summary>
+		/// Gets or sets the vertex shader.
+		/// </summary>
+		/// <value>The vertex shader.</value>
 		public D3D11.VertexShader VertexShader { get; set; }
 
+		/// <summary>
+		/// Gets or sets the pixel shader.
+		/// </summary>
+		/// <value>The pixel shader.</value>
 		public D3D11.PixelShader PixelShader { get; set; }
 
+		/// <summary>
+		/// Gets or sets the input layout.
+		/// </summary>
+		/// <value>The input layout.</value>
 		public D3D11.InputLayout InputLayout { get; set; }
 
+		/// <summary>
+		/// Gets or sets the input signature.
+		/// </summary>
+		/// <value>The input signature.</value>
 		public ShaderSignature InputSignature { get; set; }
 
+		/// <summary>
+		/// Gets or sets the D3D11Device.
+		/// </summary>
+		/// <value>The device.</value>
 		public D3D11.Device Device { get; set; }
 
 		/// <summary>
@@ -73,7 +98,10 @@ namespace SharpDXWrapper
 			}
 		}
 
-
+		/// <summary>
+		/// Apply resources to device context.
+		/// </summary>
+		/// <param name="deviceContext">The device context.</param>
 		public void Apply(D3D11.DeviceContext deviceContext)
 		{
 			deviceContext.InputAssembler.InputLayout = InputLayout;
@@ -81,30 +109,54 @@ namespace SharpDXWrapper
 			deviceContext.PixelShader.Set(PixelShader);
 		}
 
+		/// <summary>
+		/// Finalizes an instance of the <see cref="Shader"/> class.
+		/// </summary>
+		~Shader()
+		{
+			Dispose(false);
+		}
+
+		/// <summary>
+		/// Performs application-defined tasks related to the release or reset of unmanaged resources.
+		/// </summary>
 		public void Dispose()
 		{
-			if (VertexShader != null)
-			{
-				if (Device.ImmediateContext.VertexShader.Get().NativePointer == VertexShader.NativePointer)
-				{
-					Device.ImmediateContext.VertexShader.Set(null);
-					VertexShader.Dispose();
-					VertexShader = null;
-				}
-			}
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
-			if (PixelShader != null)
+		/// <summary>
+		/// Releases unmanaged and - optionally - managed resources.
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
 			{
-				if (Device.ImmediateContext.PixelShader.Get().NativePointer == PixelShader.NativePointer)
+				if (VertexShader != null)
 				{
-					Device.ImmediateContext.PixelShader.Set(null);
-					PixelShader.Dispose();
-					PixelShader = null;
+					if (Device.ImmediateContext.VertexShader.Get().NativePointer == VertexShader.NativePointer)
+					{
+						Device.ImmediateContext.VertexShader.Set(null);
+						VertexShader.Dispose();
+					}
 				}
-			}
 
-			InputLayout.Dispose();
-			InputSignature.Dispose();
+				if (PixelShader != null)
+				{
+					if (Device.ImmediateContext.PixelShader.Get().NativePointer == PixelShader.NativePointer)
+					{
+						Device.ImmediateContext.PixelShader.Set(null);
+						PixelShader.Dispose();
+					}
+				}
+
+				if (InputLayout != null)
+					InputLayout.Dispose();
+				if (InputSignature != null)
+					InputSignature.Dispose();
+			}
 		}
 	}
 }

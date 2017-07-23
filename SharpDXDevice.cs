@@ -6,11 +6,6 @@
 // Last Modified By : Andrew
 // Last Modified On : 07-21-2017
 // ***********************************************************************
-// <copyright file="SharpDXDevice.cs" company="">
-//     Copyright ©  2017
-// </copyright>
-// <summary></summary>
-// ***********************************************************************
 using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Windows;
@@ -23,83 +18,65 @@ using DXGI = SharpDX.DXGI;
 namespace SharpDXWrapper
 {
 	/// <summary>
-	/// Interface IApply
+	/// Defines generic method for applying resources.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	public interface IApply<T>
 	{
 		/// <summary>
-		/// Applies the specified t.
+		/// Applies resources.
 		/// </summary>
-		/// <param name="t">The t.</param>
+		/// <param name="t">Context to which to apply resources. Example DeviceContext</param>
 		void Apply(T t);
 	}
 
 	/// <summary>
-	/// Interface IDraw
+	/// Defines generic method for drawing resources.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
 	public interface IDraw<T>
 	{
 		/// <summary>
-		/// Draws the specified t.
+		/// Draws resources.
 		/// </summary>
-		/// <param name="t">The t.</param>
+		/// <param name="t">Context to which to draw resources. Example DeviceContext</param>
 		void Draw(T t);
 	}
 
 	/// <summary>
-	/// Class SharpDXDevice.
+	/// Provides the ability to quickly create a Direct3D11Device
 	/// </summary>
 	/// <seealso cref="System.IDisposable" />
 	public class SharpDXDevice : IDisposable
 	{
+		/// <summary>
+		/// Occurs after preparing the device for rendering.
+		/// </summary>
 		public event EventHandler OnDraw;
 
 		#region VARS
 
-		/// <summary>
-		/// The render control
-		/// </summary>
 		private Control renderControl;
 
-		/// <summary>
-		/// The D3D device
-		/// </summary>
 		private D3D11.Device d3dDevice;
 
-		/// <summary>
-		/// The D3D context
-		/// </summary>
 		private D3D11.DeviceContext d3dContext;
 
-		/// <summary>
-		/// The swap chain
-		/// </summary>
 		private DXGI.SwapChain swapChain;
 
-		/// <summary>
-		/// The D3D render target
-		/// </summary>
 		private D3D11.RenderTargetView d3dRenderTarget;
 
-		/// <summary>
-		/// The D3D depth stencil
-		/// </summary>
 		private D3D11.DepthStencilView d3dDepthStencil;
 
-		/// <summary>
-		/// The viewport
-		/// </summary>
 		private Viewport viewport;
 
 		/// <summary>
-		/// The width
+		/// The width of back buffer
 		/// </summary>
 		private int width;
 
 		/// <summary>
-		/// The height
+		/// The height of back buffer
 		/// </summary>
 		private int height;
 
@@ -119,7 +96,7 @@ namespace SharpDXWrapper
 		public bool Initialized { get; private set; }
 
 		/// <summary>
-		/// Gets the render control.
+		/// Gets the control that is used for rendering.
 		/// </summary>
 		/// <value>The render control.</value>
 		public Control RenderControl
@@ -131,7 +108,7 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Gets the device.
+		/// Gets the D3D11Device.
 		/// </summary>
 		/// <value>The device.</value>
 		public D3D11.Device Device
@@ -143,7 +120,7 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Gets the context.
+		/// Gets the immediate context.
 		/// </summary>
 		/// <value>The context.</value>
 		public D3D11.DeviceContext Context
@@ -167,7 +144,7 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Gets or sets the color of the background.
+		/// Gets or sets the background color of backbuffer.
 		/// </summary>
 		/// <value>The color of the background.</value>
 		public SharpDX.Color BackgroundColor { get; set; }
@@ -234,24 +211,45 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Выполняет определяемые приложением задачи, связанные с высвобождением или сбросом неуправляемых ресурсов.
+		/// Finalizes an instance of the <see cref="SharpDXDevice"/> class.
 		/// </summary>
-		public void Dispose()
+		~SharpDXDevice()
 		{
-			if (d3dRenderTarget != null)
-				d3dRenderTarget.Dispose();
-			if (d3dDepthStencil != null)
-				d3dDepthStencil.Dispose();
-			if (swapChain != null)
-				swapChain.Dispose();
-			if (d3dDevice != null)
-				d3dDevice.Dispose();
-			if (d3dContext != null)
-				d3dContext.Dispose();
+			Dispose(false);
 		}
 
 		/// <summary>
-		/// Initializes this instance.
+		/// Performs application-defined tasks related to the release or reset of unmanaged resources.
+		/// </summary>
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		/// <summary>
+		/// Releases unmanaged and - optionally - managed resources.
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing)
+			{
+				if (d3dRenderTarget != null)
+					d3dRenderTarget.Dispose();
+				if (d3dDepthStencil != null)
+					d3dDepthStencil.Dispose();
+				if (swapChain != null)
+					swapChain.Dispose();
+				if (d3dDevice != null)
+					d3dDevice.Dispose();
+				if (d3dContext != null)
+					d3dContext.Dispose();
+			}
+		}
+
+		/// <summary>
+		/// Creates Direct3D11 Device, RenderTargetView, DepthStencilView, Viewport
 		/// </summary>
 		/// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
 		public bool Initialize()
@@ -341,7 +339,7 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Runs this instance.
+		/// Runs the main loop for the specified control.
 		/// </summary>
 		/// <exception cref="System.Exception"></exception>
 		public void Run()
@@ -479,7 +477,7 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Begins the draw.
+		/// Prepares the device for drawing and invoke OnDraw event
 		/// </summary>
 		/// <exception cref="System.Exception">
 		/// </exception>
@@ -516,7 +514,7 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Presents this instance.
+		/// Presents this instance. SwapChain::Present()
 		/// </summary>
 		/// <exception cref="System.Exception"></exception>
 		public void Present()

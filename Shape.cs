@@ -6,11 +6,6 @@
 // Last Modified By : Andrew
 // Last Modified On : 07-21-2017
 // ***********************************************************************
-// <copyright file="Shape.cs" company="">
-//     Copyright ©  2017
-// </copyright>
-// <summary></summary>
-// ***********************************************************************
 using SharpDX;
 using System;
 using System.Globalization;
@@ -49,8 +44,8 @@ namespace SharpDXWrapper
 	/// Class Shape.
 	/// </summary>
 	/// <seealso cref="System.IDisposable" />
-	/// <seealso cref="SharpDXWrapper.IApply{SharpDX.Direct3D11.DeviceContext}" />
-	/// <seealso cref="SharpDXWrapper.IDraw{SharpDX.Direct3D11.DeviceContext}" />
+	/// <seealso cref="SharpDXWrapper.IApply{T}" />
+	/// <seealso cref="SharpDXWrapper.IDraw{T}" />
 	public class Shape : IDisposable, IApply<D3D11.DeviceContext>, IDraw<D3D11.DeviceContext>
 	{
 		/// <summary>
@@ -192,9 +187,8 @@ namespace SharpDXWrapper
 		/// Calculates the normals.
 		/// </summary>
 		/// <param name="vertices">The vertices.</param>
-		/// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
+		/// <remarks>Calculates the normal, provided that the number of vertices is a multiple of 3</remarks>
 		/// <exception cref="System.ArgumentNullException"></exception>
-		/// <exception cref="ArgumentNullException"></exception>
 		public static bool CalculateNormals(DirectXVertex[] vertices)
 		{
 			if (vertices == null)
@@ -203,7 +197,7 @@ namespace SharpDXWrapper
 			}
 			if (vertices.Length % 3 != 0)
 			{
-				System.Diagnostics.Debug.WriteLine("Количество вершин должно быть кратно 3");
+				System.Diagnostics.Debug.WriteLine("The number of vertices must be a multiple of 3");
 				return false;
 			}
 			for (int i = 0; i < vertices.Length; i += 3)
@@ -222,7 +216,6 @@ namespace SharpDXWrapper
 		/// <param name="indices">The indices.</param>
 		/// <returns>DirectXVertex[].</returns>
 		/// <exception cref="System.ArgumentNullException"></exception>
-		/// <exception cref="ArgumentNullException"></exception>
 		public static DirectXVertex[] CreateIndexedVertices(DirectXVertex[] vertices, uint[] indices)
 		{
 			if (vertices == null || indices == null)
@@ -243,7 +236,6 @@ namespace SharpDXWrapper
 		/// <param name="vertices">The vertices.</param>
 		/// <param name="fileName">Name of the file.</param>
 		/// <exception cref="System.ArgumentNullException"></exception>
-		/// <exception cref="ArgumentNullException"></exception>
 		public static void SaveToObjFile(DirectXVertex[] vertices, string fileName)
 		{
 			if (vertices == null || fileName == string.Empty)

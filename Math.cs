@@ -11,8 +11,17 @@ using System;
 
 namespace SharpDXWrapper
 {
+	/// <summary>
+	/// Provides helper methods.
+	/// </summary>
 	public static class MathHelper
 	{
+		/// <summary>
+		/// Gets vector from yaw and pitch angles
+		/// </summary>
+		/// <param name="yaw">The yaw angle.</param>
+		/// <param name="pitch">The pitch angle.</param>
+		/// <returns>Vector3.</returns>
 		public static Vector3 Vector3FromYawPitch(float yaw, float pitch)
 		{
 			return new Vector3(
@@ -21,6 +30,21 @@ namespace SharpDXWrapper
 			   (float)(System.Math.Cos(yaw) * System.Math.Cos(pitch)));
 		}
 
+		/// <summary>
+		///  Gets yaws, pitch and roll angles from vector.
+		/// </summary>
+		/// <param name="vector">The vector.</param>
+		/// <returns>Vector3.</returns>
+		public static Vector3 YawPitchRoll(this Vector3 vector)
+		{
+			return YawPitchRollFromVector3(vector);
+		}
+
+		/// <summary>
+		/// Gets yaws, pitch and roll angles from vector.
+		/// </summary>
+		/// <param name="vector">The vector.</param>
+		/// <returns>Vector3.</returns>
 		public static Vector3 YawPitchRollFromVector3(Vector3 vector)
 		{
 			float yaw = 0;
@@ -53,6 +77,13 @@ namespace SharpDXWrapper
 			return new Vector3(yaw, pitch, 0);
 		}
 
+		/// <summary>
+		/// Compute normal from triangle.
+		/// </summary>
+		/// <param name="a">a.</param>
+		/// <param name="b">The b.</param>
+		/// <param name="c">The c.</param>
+		/// <returns>Vector3.</returns>
 		public static Vector3 NormalFromTriangle(Vector3 a, Vector3 b, Vector3 c)
 		{
 			Vector3 dir = Vector3.Cross(b - a, c - a);
