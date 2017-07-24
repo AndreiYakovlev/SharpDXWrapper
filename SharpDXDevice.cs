@@ -10,6 +10,7 @@ using SharpDX;
 using SharpDX.Direct3D;
 using SharpDX.Windows;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 using D3D11 = SharpDX.Direct3D11;
@@ -41,6 +42,77 @@ namespace SharpDXWrapper
 		/// </summary>
 		/// <param name="t">Context to which to draw resources. Example DeviceContext</param>
 		void Draw(T t);
+	}
+
+	/// <summary>
+	/// Specifies the required parameters with which the device will be created
+	/// </summary>
+	public struct DeviceDescription
+	{
+		/// <summary>
+		/// The multisample count.
+		/// </summary>
+		public MultiSampleType MultiSampleCount;
+
+		/// <summary>
+		/// The multisample quality. Usually this value is 0
+		/// </summary>
+		public int MultiSampleQuality;
+
+		/// <summary>
+		/// The fullcreen
+		/// </summary>
+		public bool Fullcreen;
+
+		/// <summary>
+		/// The swap effect
+		/// </summary>
+		public DXGI.SwapEffect SwapEffect;
+
+		/// <summary>
+		/// Returns default values for SharpDXWrapper.DeviceDescription.
+		/// </summary>
+		public static DeviceDescription Default()
+		{
+			return new DeviceDescription()
+			{
+				MultiSampleCount = MultiSampleType.MSAA8,
+				MultiSampleQuality = 0,
+				Fullcreen = true,
+				SwapEffect = DXGI.SwapEffect.Discard,
+			};
+		}
+
+		/// <summary>
+		/// Returns a <see cref="System.String" /> that represents this instance.
+		/// </summary>
+		/// <returns>A <see cref="System.String" /> that represents this instance.</returns>
+		public override string ToString()
+		{
+			return String.Format("[{0}, {1}, {2}, {3}]", MultiSampleCount.ToString("F"), MultiSampleQuality, Fullcreen, SwapEffect);
+		}
+	}
+
+	/// <summary>
+	/// The number of multisamples per pixel.
+	/// The default sampler mode, with no anti-aliasing, has a count of 1 and a quality level of 0.
+	/// Hardware must support 1, 4, and 8 sample counts. Hardware vendors can expose more sample counts beyond these.
+	/// However, if vendors support 2, 4(required), 8(required), or 16,
+	/// they must also support the corresponding standard pattern or center pattern for each of those sample counts.
+	/// https://msdn.microsoft.com/en-us/library/windows/desktop/bb173072(v=vs.85).aspx)
+	/// </summary>
+	public enum MultiSampleType
+	{
+		/// <summary>
+		/// Set this value if the device should automatically determine MultiSampleCount.
+		/// </summary>
+		Unknown = 0,
+
+		MSAA1 = 1,
+		MSAA2 = 2,
+		MSAA4 = 4,
+		MSAA8 = 8,
+		MSAA16 = 16,
 	}
 
 	/// <summary>
@@ -189,6 +261,24 @@ namespace SharpDXWrapper
 			}
 		}
 
+		/// <summary>
+		/// Gets description of the created device
+		/// </summary>
+		/// <value>The description.</value>
+		public DeviceDescription Description
+		{
+			get
+			{
+				return new DeviceDescription()
+				{
+					MultiSampleCount = (MultiSampleType)SwapChain.Description.SampleDescription.Count,
+					MultiSampleQuality = SwapChain.Description.SampleDescription.Quality,
+					Fullcreen = !SwapChain.Description.IsWindowed,
+					SwapEffect = SwapChain.Description.SwapEffect,
+				};
+			}
+		}
+
 		#endregion FIELDS
 
 		/// <summary>
@@ -249,10 +339,36 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
+		/// Check the multisample levels that are supported by the device.
+		/// </summary>
+		/// <returns>DXGI.SampleDescription[].</returns>
+		public static DXGI.SampleDescription[] CheckMultiSample()
+		{
+			using (D3D11.Device Device = new D3D11.Device(DriverType.Hardware, D3D11.DeviceCreationFlags.None))
+			{
+				const DXGI.Format bufferFormat = DXGI.Format.R8G8B8A8_UNorm;
+
+				System.Collections.Generic.List<DXGI.SampleDescription> samples =
+					new System.Collections.Generic.List<DXGI.SampleDescription>();
+
+				for (int samplerCount = 0; samplerCount < D3D11.Device.MultisampleCountMaximum; samplerCount++)
+				{
+					int quality = Device.CheckMultisampleQualityLevels(bufferFormat, samplerCount);
+					if (quality > 0)
+					{
+						samples.Add(new DXGI.SampleDescription(samplerCount, quality - 1));
+					}
+				}
+
+				return samples.ToArray();
+			}
+		}
+
+		/// <summary>
 		/// Creates Direct3D11 Device, RenderTargetView, DepthStencilView, Viewport
 		/// </summary>
-		/// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
-		public bool Initialize()
+		/// <returns><c>true</c> if Device initialized, <c>false</c> otherwise.</returns>
+		public bool Initialize(DeviceDescription deviceDescription)
 		{
 			FeatureLevel[] levels = new FeatureLevel[]{
 				FeatureLevel.Level_10_0,
@@ -284,26 +400,46 @@ namespace SharpDXWrapper
 			{
 				BufferCount = 1,
 				Flags = DXGI.SwapChainFlags.None,
-				IsWindowed = true,
+				IsWindowed = !deviceDescription.Fullcreen,
 				ModeDescription = backBufferDesc,
 				OutputHandle = renderControl.Handle,
-				SampleDescription = new DXGI.SampleDescription(1, 0),
-				SwapEffect = DXGI.SwapEffect.Discard,
+				SwapEffect = deviceDescription.SwapEffect,
 				Usage = DXGI.Usage.RenderTargetOutput,
 			};
 
-			for (int samplerCount = 8; samplerCount > 0; samplerCount--)
+			switch (deviceDescription.MultiSampleCount)
 			{
-				int quality = d3dDevice.CheckMultisampleQualityLevels(bufferFormat, samplerCount);
-				if (quality > 0)
-				{
-					swapChainDesc.SampleDescription = new DXGI.SampleDescription(samplerCount, quality - 1);
+				case MultiSampleType.MSAA1:
+					swapChainDesc.SampleDescription = new DXGI.SampleDescription(1, deviceDescription.MultiSampleQuality);
 					break;
-				}
-				else if (samplerCount == 1)
-				{
-					return false;
-				}
+
+				case MultiSampleType.MSAA2:
+					swapChainDesc.SampleDescription = new DXGI.SampleDescription(2, deviceDescription.MultiSampleQuality);
+					break;
+
+				case MultiSampleType.MSAA4:
+					swapChainDesc.SampleDescription = new DXGI.SampleDescription(4, deviceDescription.MultiSampleQuality);
+					break;
+
+				case MultiSampleType.MSAA8:
+					swapChainDesc.SampleDescription = new DXGI.SampleDescription(8, deviceDescription.MultiSampleQuality);
+					break;
+
+				case MultiSampleType.MSAA16:
+					swapChainDesc.SampleDescription = new DXGI.SampleDescription(16, deviceDescription.MultiSampleQuality);
+					break;
+
+				case MultiSampleType.Unknown:
+					var samples = SharpDXDevice.CheckMultiSample();
+					if (samples == null)
+					{
+						throw new Exception("Because the MultiSampleCount parameter is [Unknown], the device could not determine the parameter automatically");
+					}
+					swapChainDesc.SampleDescription = samples.Last();
+					break;
+
+				default:
+					throw new System.ComponentModel.InvalidEnumArgumentException("deviceDescription.MultiSampleCount");
 			}
 
 			DXGI.Device device = d3dDevice.QueryInterface<DXGI.Device>();

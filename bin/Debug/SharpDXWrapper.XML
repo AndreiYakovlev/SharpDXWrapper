@@ -552,6 +552,57 @@
             </summary>
             <value>The indices count.</value>
         </member>
+        <member name="T:SharpDXWrapper.DeviceDescription">
+            <summary>
+            Specifies the required parameters with which the device will be created
+            </summary>
+        </member>
+        <member name="F:SharpDXWrapper.DeviceDescription.MultiSampleCount">
+            <summary>
+            The multisample count.
+            </summary>
+        </member>
+        <member name="F:SharpDXWrapper.DeviceDescription.MultiSampleQuality">
+            <summary>
+            The multisample quality. Usually this value is 0
+            </summary>
+        </member>
+        <member name="F:SharpDXWrapper.DeviceDescription.Fullcreen">
+            <summary>
+            The fullcreen
+            </summary>
+        </member>
+        <member name="F:SharpDXWrapper.DeviceDescription.SwapEffect">
+            <summary>
+            The swap effect
+            </summary>
+        </member>
+        <member name="M:SharpDXWrapper.DeviceDescription.Default">
+            <summary>
+            Returns default values for SharpDXWrapper.DeviceDescription.
+            </summary>
+        </member>
+        <member name="M:SharpDXWrapper.DeviceDescription.ToString">
+            <summary>
+            Returns a <see cref="T:System.String"/> that represents this instance.
+            </summary>
+            <returns>A <see cref="T:System.String"/> that represents this instance.</returns>
+        </member>
+        <member name="T:SharpDXWrapper.MultiSampleType">
+            <summary>
+            The number of multisamples per pixel.
+            The default sampler mode, with no anti-aliasing, has a count of 1 and a quality level of 0.
+            Hardware must support 1, 4, and 8 sample counts. Hardware vendors can expose more sample counts beyond these.
+            However, if vendors support 2, 4(required), 8(required), or 16,
+            they must also support the corresponding standard pattern or center pattern for each of those sample counts.
+            https://msdn.microsoft.com/en-us/library/windows/desktop/bb173072(v=vs.85).aspx)
+            </summary>
+        </member>
+        <member name="F:SharpDXWrapper.MultiSampleType.Unknown">
+            <summary>
+            Set this value if the device should automatically determine MultiSampleCount.
+            </summary>
+        </member>
         <member name="T:SharpDXWrapper.SharpDXDevice">
             <summary>
             Provides the ability to quickly create a Direct3D11Device
@@ -596,11 +647,17 @@
             </summary>
             <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         </member>
-        <member name="M:SharpDXWrapper.SharpDXDevice.Initialize">
+        <member name="M:SharpDXWrapper.SharpDXDevice.CheckMultiSample">
+            <summary>
+            Check the multisample levels that are supported by the device.
+            </summary>
+            <returns>DXGI.SampleDescription[].</returns>
+        </member>
+        <member name="M:SharpDXWrapper.SharpDXDevice.Initialize(SharpDXWrapper.DeviceDescription)">
             <summary>
             Creates Direct3D11 Device, RenderTargetView, DepthStencilView, Viewport
             </summary>
-            <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
+            <returns><c>true</c> if Device initialized, <c>false</c> otherwise.</returns>
         </member>
         <member name="M:SharpDXWrapper.SharpDXDevice.Run">
             <summary>
@@ -723,6 +780,12 @@
             Gets the height.
             </summary>
             <value>The height.</value>
+        </member>
+        <member name="P:SharpDXWrapper.SharpDXDevice.Description">
+            <summary>
+            Gets description of the created device
+            </summary>
+            <value>The description.</value>
         </member>
     </members>
 </doc>
