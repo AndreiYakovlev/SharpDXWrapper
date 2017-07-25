@@ -59,6 +59,8 @@ namespace SharpDXWrapper
 	new D3D11.InputElement("TEXCOORD", 0, DXGI.Format.R32G32_Float, 36, 0, D3D11.InputClassification.PerVertexData, 0),
 };
 
+		private bool disposed = false;
+
 		/// <summary>
 		/// The vertex buffer
 		/// </summary>
@@ -116,13 +118,30 @@ namespace SharpDXWrapper
 		/// <summary>
 		/// Выполняет определяемые приложением задачи, связанные с высвобождением или сбросом неуправляемых ресурсов.
 		/// </summary>
-		public virtual void Dispose()
+		public void Dispose()
 		{
-			Vertices = null;
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 
-			if (VertexBuffer != null)
+		/// <summary>
+		/// Releases unmanaged and - optionally - managed resources.
+		/// </summary>
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+		protected virtual void Dispose(bool disposing)
+		{
+			if (!disposed)
 			{
-				VertexBuffer.Dispose();
+				if (disposing)
+				{
+					Vertices = null;
+					if (VertexBuffer != null)
+					{
+						VertexBuffer.Dispose();
+						VertexBuffer = null;
+					}
+				}
+				disposed = true;
 			}
 		}
 
@@ -193,7 +212,7 @@ namespace SharpDXWrapper
 		{
 			if (vertices == null)
 			{
-				throw new ArgumentNullException();
+				throw new ArgumentNullException("vertices");
 			}
 			if (vertices.Length % 3 != 0)
 			{
@@ -218,10 +237,16 @@ namespace SharpDXWrapper
 		/// <exception cref="System.ArgumentNullException"></exception>
 		public static DirectXVertex[] CreateIndexedVertices(DirectXVertex[] vertices, uint[] indices)
 		{
-			if (vertices == null || indices == null)
+			if (vertices == null)
 			{
-				throw new ArgumentNullException();
+				throw new ArgumentNullException("vertices");
 			}
+
+			if (indices == null)
+			{
+				throw new ArgumentNullException("indices");
+			}
+
 			DirectXVertex[] indicesVertices = new DirectXVertex[indices.Length];
 			for (int i = 0; i < indicesVertices.Length; i++)
 			{
@@ -238,9 +263,14 @@ namespace SharpDXWrapper
 		/// <exception cref="System.ArgumentNullException"></exception>
 		public static void SaveToObjFile(DirectXVertex[] vertices, string fileName)
 		{
-			if (vertices == null || fileName == string.Empty)
+			if (vertices == null)
 			{
-				throw new ArgumentNullException();
+				throw new ArgumentNullException("vertices");
+			}
+
+			if (fileName == string.Empty)
+			{
+				throw new ArgumentException("fileName is empty");
 			}
 
 			using (System.IO.FileStream stream = new System.IO.FileStream(fileName, System.IO.FileMode.Create))
@@ -292,8 +322,10 @@ namespace SharpDXWrapper
 	/// Class IndexedShape.
 	/// </summary>
 	/// <seealso cref="SharpDXWrapper.Shape" />
-	public class IndexedShape : Shape
+	public class IndexedShape : Shape, IDisposable
 	{
+		private bool disposed = false;
+
 		/// <summary>
 		/// The index buffer
 		/// </summary>
@@ -333,16 +365,36 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
+		/// Выполняет определяемые приложением задачи, связанные с высвобождением или сбросом неуправляемых ресурсов.
+		/// </summary>
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		/// <summary>
 		/// Releases unmanaged and - optionally - managed resources.
 		/// </summary>
-		public override void Dispose()
+		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+		protected override void Dispose(bool disposing)
 		{
-			Indices = null;
-			if (IndexBuffer != null)
+			if (!disposed)
 			{
-				IndexBuffer.Dispose();
+				if (disposing)
+				{
+					Indices = null;
+					if (IndexBuffer != null)
+					{
+						IndexBuffer.Dispose();
+						IndexBuffer = null;
+					}
+				}
+
+				disposed = true;
 			}
-			base.Dispose();
+
+			base.Dispose(disposing);
 		}
 
 		/// <summary>

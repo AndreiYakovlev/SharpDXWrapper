@@ -20,6 +20,8 @@ namespace SharpDXWrapper
 	/// <seealso cref="SharpDXWrapper.IApply{T}" />
 	public class Shader : IDisposable, IApply<D3D11.DeviceContext>
 	{
+		private bool disposed = false;
+
 		/// <summary>
 		/// Gets or sets the vertex shader.
 		/// </summary>
@@ -66,7 +68,17 @@ namespace SharpDXWrapper
 		{
 			if (device == null || elements == null)
 			{
-				throw new ArgumentNullException();
+				throw new ArgumentNullException("device");
+			}
+
+			if ( elements == null)
+			{
+				throw new ArgumentNullException("elements");
+			}
+
+			if (fileName == string.Empty)
+			{
+				throw new ArgumentException("fileName is empty");
 			}
 
 			this.Device = device;
@@ -132,30 +144,43 @@ namespace SharpDXWrapper
 		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (!disposed)
 			{
-				if (VertexShader != null)
+				if (disposing)
 				{
-					if (Device.ImmediateContext.VertexShader.Get().NativePointer == VertexShader.NativePointer)
+					if (VertexShader != null)
 					{
-						Device.ImmediateContext.VertexShader.Set(null);
-						VertexShader.Dispose();
+						if (Device.ImmediateContext.VertexShader.Get().NativePointer == VertexShader.NativePointer)
+						{
+							Device.ImmediateContext.VertexShader.Set(null);
+							VertexShader.Dispose();
+							VertexShader = null;
+						}
+					}
+
+					if (PixelShader != null)
+					{
+						if (Device.ImmediateContext.PixelShader.Get().NativePointer == PixelShader.NativePointer)
+						{
+							Device.ImmediateContext.PixelShader.Set(null);
+							PixelShader.Dispose();
+							PixelShader = null;
+						}
+					}
+
+					if (InputLayout != null)
+					{
+						InputLayout.Dispose();
+						InputLayout = null;
+					}
+
+					if (InputSignature != null)
+					{
+						InputSignature.Dispose();
+						InputSignature = null;
 					}
 				}
-
-				if (PixelShader != null)
-				{
-					if (Device.ImmediateContext.PixelShader.Get().NativePointer == PixelShader.NativePointer)
-					{
-						Device.ImmediateContext.PixelShader.Set(null);
-						PixelShader.Dispose();
-					}
-				}
-
-				if (InputLayout != null)
-					InputLayout.Dispose();
-				if (InputSignature != null)
-					InputSignature.Dispose();
+				disposed = true;
 			}
 		}
 	}

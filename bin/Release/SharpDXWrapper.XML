@@ -439,6 +439,12 @@
             Выполняет определяемые приложением задачи, связанные с высвобождением или сбросом неуправляемых ресурсов.
             </summary>
         </member>
+        <member name="M:SharpDXWrapper.Shape.Dispose(System.Boolean)">
+            <summary>
+            Releases unmanaged and - optionally - managed resources.
+            </summary>
+            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        </member>
         <member name="M:SharpDXWrapper.Shape.Apply(SharpDX.Direct3D11.DeviceContext)">
             <summary>
             Applies the specified context.
@@ -517,8 +523,14 @@
         </member>
         <member name="M:SharpDXWrapper.IndexedShape.Dispose">
             <summary>
+            Выполняет определяемые приложением задачи, связанные с высвобождением или сбросом неуправляемых ресурсов.
+            </summary>
+        </member>
+        <member name="M:SharpDXWrapper.IndexedShape.Dispose(System.Boolean)">
+            <summary>
             Releases unmanaged and - optionally - managed resources.
             </summary>
+            <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         </member>
         <member name="M:SharpDXWrapper.IndexedShape.Apply(SharpDX.Direct3D11.DeviceContext)">
             <summary>
@@ -609,6 +621,11 @@
             </summary>
             <seealso cref="T:System.IDisposable"/>
         </member>
+        <member name="F:SharpDXWrapper.SharpDXDevice.BackBufferFormat">
+            <summary>
+            BackBuffer format used when creating SwapChain and check multisample levels.
+            </summary>
+        </member>
         <member name="F:SharpDXWrapper.SharpDXDevice.width">
             <summary>
             The width of back buffer
@@ -624,12 +641,14 @@
             The synchronize interval
             </summary>
         </member>
-        <member name="M:SharpDXWrapper.SharpDXDevice.#ctor(System.Windows.Forms.Control)">
+        <member name="M:SharpDXWrapper.SharpDXDevice.#ctor(System.Windows.Forms.Control,SharpDXWrapper.DeviceDescription)">
             <summary>
             Initializes a new instance of the <see cref="T:SharpDXWrapper.SharpDXDevice"/> class.
             </summary>
             <param name="control">The control.</param>
+            <param name="deviceDescription">The device description.</param>
             <exception cref="T:System.ArgumentNullException">control</exception>
+            <exception cref="T:System.Exception">Failed to initialize Device</exception>
         </member>
         <member name="M:SharpDXWrapper.SharpDXDevice.Finalize">
             <summary>
@@ -657,7 +676,9 @@
             <summary>
             Creates Direct3D11 Device, RenderTargetView, DepthStencilView, Viewport
             </summary>
-            <returns><c>true</c> if Device initialized, <c>false</c> otherwise.</returns>
+            <param name="deviceDescription">The device description.</param>
+            <exception cref="T:System.Exception"></exception>
+            <exception cref="T:System.ComponentModel.InvalidEnumArgumentException">deviceDescription.MultiSampleCount</exception>
         </member>
         <member name="M:SharpDXWrapper.SharpDXDevice.Run">
             <summary>
@@ -688,12 +709,12 @@
         </member>
         <member name="M:SharpDXWrapper.SharpDXDevice.Resize(System.Int32,System.Int32)">
             <summary>
-            Resizes the specified width.
+            Resize backbuffer the specified width and height
             </summary>
             <param name="width">The width.</param>
             <param name="height">The height.</param>
-            <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
-            <exception cref="T:System.Exception"></exception>
+            <exception cref="T:System.Exception">
+            </exception>
         </member>
         <member name="M:SharpDXWrapper.SharpDXDevice.BeginDraw">
             <summary>
@@ -704,7 +725,7 @@
         </member>
         <member name="M:SharpDXWrapper.SharpDXDevice.Present">
             <summary>
-            Presents this instance. SwapChain::Present()
+            Presents a rendered image to the user. SwapChain::Present()
             </summary>
             <exception cref="T:System.Exception"></exception>
         </member>
@@ -726,12 +747,6 @@
             <summary>
             Occurs after preparing the device for rendering.
             </summary>
-        </member>
-        <member name="P:SharpDXWrapper.SharpDXDevice.Initialized">
-            <summary>
-            Gets a value indicating whether this <see cref="T:SharpDXWrapper.SharpDXDevice"/> is initialized.
-            </summary>
-            <value><c>true</c> if initialized; otherwise, <c>false</c>.</value>
         </member>
         <member name="P:SharpDXWrapper.SharpDXDevice.RenderControl">
             <summary>

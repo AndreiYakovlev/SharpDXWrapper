@@ -122,11 +122,18 @@ namespace SharpDXWrapper
 	public class SharpDXDevice : IDisposable
 	{
 		/// <summary>
+		/// BackBuffer format used when creating SwapChain and check multisample levels.
+		/// </summary>
+		public const DXGI.Format BackBufferFormat = DXGI.Format.R8G8B8A8_UNorm;
+
+		/// <summary>
 		/// Occurs after preparing the device for rendering.
 		/// </summary>
 		public event EventHandler OnDraw;
 
 		#region VARS
+
+		private bool disposed = false;
 
 		private Control renderControl;
 
@@ -160,12 +167,6 @@ namespace SharpDXWrapper
 		#endregion VARS
 
 		#region FIELDS
-
-		/// <summary>
-		/// Gets a value indicating whether this <see cref="SharpDXDevice"/> is initialized.
-		/// </summary>
-		/// <value><c>true</c> if initialized; otherwise, <c>false</c>.</value>
-		public bool Initialized { get; private set; }
 
 		/// <summary>
 		/// Gets the control that is used for rendering.
@@ -285,8 +286,10 @@ namespace SharpDXWrapper
 		/// Initializes a new instance of the <see cref="SharpDXDevice"/> class.
 		/// </summary>
 		/// <param name="control">The control.</param>
+		/// <param name="deviceDescription">The device description.</param>
 		/// <exception cref="System.ArgumentNullException">control</exception>
-		public SharpDXDevice(Control control)
+		/// <exception cref="System.Exception">Failed to initialize Device</exception>
+		public SharpDXDevice(Control control, DeviceDescription deviceDescription)
 		{
 			if (control == null)
 			{
@@ -298,6 +301,15 @@ namespace SharpDXWrapper
 			height = renderControl.ClientSize.Height;
 
 			BackgroundColor = new Color(51, 51, 51);
+
+			try
+			{
+				Initialize(deviceDescription);
+			}
+			catch (Exception ex)
+			{
+				throw new Exception("Failed to initialize Device", ex);
+			}
 		}
 
 		/// <summary>
@@ -323,18 +335,24 @@ namespace SharpDXWrapper
 		/// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
 		protected virtual void Dispose(bool disposing)
 		{
-			if (disposing)
+			if (!disposed)
 			{
-				if (d3dRenderTarget != null)
-					d3dRenderTarget.Dispose();
-				if (d3dDepthStencil != null)
-					d3dDepthStencil.Dispose();
-				if (swapChain != null)
-					swapChain.Dispose();
-				if (d3dDevice != null)
-					d3dDevice.Dispose();
-				if (d3dContext != null)
-					d3dContext.Dispose();
+				if (disposing) //Managed here
+				{
+					if (d3dRenderTarget != null)
+						d3dRenderTarget.Dispose();
+					if (d3dDepthStencil != null)
+						d3dDepthStencil.Dispose();
+					if (swapChain != null)
+						swapChain.Dispose();
+					if (d3dDevice != null)
+						d3dDevice.Dispose();
+					if (d3dContext != null)
+						d3dContext.Dispose();
+				}
+				//Unmanaged here
+
+				disposed = true;
 			}
 		}
 
@@ -346,14 +364,12 @@ namespace SharpDXWrapper
 		{
 			using (D3D11.Device Device = new D3D11.Device(DriverType.Hardware, D3D11.DeviceCreationFlags.None))
 			{
-				const DXGI.Format bufferFormat = DXGI.Format.R8G8B8A8_UNorm;
-
 				System.Collections.Generic.List<DXGI.SampleDescription> samples =
 					new System.Collections.Generic.List<DXGI.SampleDescription>();
 
 				for (int samplerCount = 0; samplerCount < D3D11.Device.MultisampleCountMaximum; samplerCount++)
 				{
-					int quality = Device.CheckMultisampleQualityLevels(bufferFormat, samplerCount);
+					int quality = Device.CheckMultisampleQualityLevels(BackBufferFormat, samplerCount);
 					if (quality > 0)
 					{
 						samples.Add(new DXGI.SampleDescription(samplerCount, quality - 1));
@@ -367,8 +383,10 @@ namespace SharpDXWrapper
 		/// <summary>
 		/// Creates Direct3D11 Device, RenderTargetView, DepthStencilView, Viewport
 		/// </summary>
-		/// <returns><c>true</c> if Device initialized, <c>false</c> otherwise.</returns>
-		public bool Initialize(DeviceDescription deviceDescription)
+		/// <param name="deviceDescription">The device description.</param>
+		/// <exception cref="System.Exception"></exception>
+		/// <exception cref="System.ComponentModel.InvalidEnumArgumentException">deviceDescription.MultiSampleCount</exception>
+		private void Initialize(DeviceDescription deviceDescription)
 		{
 			FeatureLevel[] levels = new FeatureLevel[]{
 				FeatureLevel.Level_10_0,
@@ -379,18 +397,11 @@ namespace SharpDXWrapper
 
 			d3dDevice = new D3D11.Device(DriverType.Hardware, D3D11.DeviceCreationFlags.Debug, levels);
 
-			if (d3dDevice == null)
-			{
-				return false;
-			}
-
-			const DXGI.Format bufferFormat = DXGI.Format.R8G8B8A8_UNorm;
-
 			DXGI.ModeDescription backBufferDesc = new DXGI.ModeDescription()
 			{
 				Width = width,
 				Height = height,
-				Format = bufferFormat,
+				Format = BackBufferFormat,
 				RefreshRate = new DXGI.Rational(60, 1),
 				Scaling = DXGI.DisplayModeScaling.Unspecified,
 				ScanlineOrdering = DXGI.DisplayModeScanlineOrder.Progressive,
@@ -433,13 +444,15 @@ namespace SharpDXWrapper
 					var samples = SharpDXDevice.CheckMultiSample();
 					if (samples == null)
 					{
-						throw new Exception("Because the MultiSampleCount parameter is [Unknown], the device could not determine the parameter automatically");
+						throw new Exception(MethodBase.GetCurrentMethod().Name +
+							" Because the MultiSampleCount parameter is [Unknown], the device could not determine the parameter automatically");
 					}
 					swapChainDesc.SampleDescription = samples.Last();
 					break;
 
 				default:
-					throw new System.ComponentModel.InvalidEnumArgumentException("deviceDescription.MultiSampleCount");
+					throw new System.ComponentModel.InvalidEnumArgumentException("deviceDescription.MultiSampleCount",
+						(int)deviceDescription.MultiSampleCount, typeof(MultiSampleType));
 			}
 
 			DXGI.Device device = d3dDevice.QueryInterface<DXGI.Device>();
@@ -447,10 +460,6 @@ namespace SharpDXWrapper
 			DXGI.Factory factory = adapter.GetParent<DXGI.Factory>();
 
 			swapChain = new DXGI.SwapChain(factory, d3dDevice, swapChainDesc);
-			if (swapChain == null)
-			{
-				return false;
-			}
 
 			d3dContext = d3dDevice.ImmediateContext;
 
@@ -465,13 +474,9 @@ namespace SharpDXWrapper
 
 			viewport = new Viewport(0, 0, width, height);
 
-			Initialized = true;
-
 			this.SetRasterizerState(rasterDesc);
 			d3dRenderTarget = CreateRenderTarget();
 			d3dDepthStencil = CreateDepthStencil();
-
-			return true;
 		}
 
 		/// <summary>
@@ -480,10 +485,6 @@ namespace SharpDXWrapper
 		/// <exception cref="System.Exception"></exception>
 		public void Run()
 		{
-			if (!Initialized)
-			{
-				throw new Exception(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-			}
 			RenderLoop.Run(renderControl, () => { BeginDraw(); Present(); }, true);
 		}
 
@@ -494,12 +495,6 @@ namespace SharpDXWrapper
 		/// <exception cref="System.Exception"></exception>
 		public void SetRasterizerState(D3D11.RasterizerStateDescription desc)
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return;
-			}
-
 			if (d3dDevice == null || d3dContext == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "Device or DeviceContext is null");
@@ -521,12 +516,6 @@ namespace SharpDXWrapper
 		/// <exception cref="System.Exception"></exception>
 		public void SetFillMode(D3D11.FillMode fillMode)
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return;
-			}
-
 			if (d3dContext == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "DeviceContext is null");
@@ -545,12 +534,6 @@ namespace SharpDXWrapper
 		/// <exception cref="System.Exception"></exception>
 		public void SetCullMode(D3D11.CullMode cullMode)
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return;
-			}
-
 			if (d3dContext == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "DeviceContext is null");
@@ -563,20 +546,14 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Resizes the specified width.
+		/// Resize backbuffer the specified width and height
 		/// </summary>
 		/// <param name="width">The width.</param>
 		/// <param name="height">The height.</param>
-		/// <returns><c>true</c> if XXXX, <c>false</c> otherwise.</returns>
-		/// <exception cref="System.Exception"></exception>
-		public bool Resize(int width, int height)
+		/// <exception cref="System.Exception">
+		/// </exception>
+		public void Resize(int width, int height)
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return false;
-			}
-
 			if (d3dDevice == null || swapChain == null || d3dContext == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "Device, DeviceContext or SwapChain is null");
@@ -584,8 +561,7 @@ namespace SharpDXWrapper
 
 			if (width <= 0 || height <= 0)
 			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Width or height less than or equal to zero");
-				return false;
+				throw new Exception(MethodBase.GetCurrentMethod().Name + " Width or height less than or equal to zero");
 			}
 
 			this.width = width;
@@ -609,7 +585,6 @@ namespace SharpDXWrapper
 			System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Buffers resized " + width + ":" + height);
 
 			viewport = new Viewport(0, 0, width, height);
-			return true;
 		}
 
 		/// <summary>
@@ -619,12 +594,6 @@ namespace SharpDXWrapper
 		/// </exception>
 		public void BeginDraw()
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return;
-			}
-
 			if (d3dContext == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "DeviceContext is null");
@@ -650,17 +619,11 @@ namespace SharpDXWrapper
 		}
 
 		/// <summary>
-		/// Presents this instance. SwapChain::Present()
+		/// Presents a rendered image to the user. SwapChain::Present()
 		/// </summary>
 		/// <exception cref="System.Exception"></exception>
 		public void Present()
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return;
-			}
-
 			if (swapChain != null)
 			{
 				swapChain.Present(syncInterval, DXGI.PresentFlags.None);
@@ -678,12 +641,6 @@ namespace SharpDXWrapper
 		/// <exception cref="System.Exception"></exception>
 		private D3D11.RenderTargetView CreateRenderTarget()
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return null;
-			}
-
 			if (d3dDevice == null || swapChain == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "Device or SwapChain is null");
@@ -702,12 +659,6 @@ namespace SharpDXWrapper
 		/// <exception cref="System.Exception"></exception>
 		private D3D11.DepthStencilView CreateDepthStencil()
 		{
-			if (!Initialized)
-			{
-				System.Diagnostics.Debug.WriteLine(MethodBase.GetCurrentMethod().Name + " Device not initialized");
-				return null;
-			}
-
 			if (swapChain == null || d3dDevice == null)
 			{
 				throw new Exception(MethodBase.GetCurrentMethod().Name + "Device or SwapChain is null");
