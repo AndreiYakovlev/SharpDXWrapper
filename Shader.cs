@@ -66,7 +66,7 @@ namespace SharpDXWrapper
 		public Shader(D3D11.Device device, string fileName, string vertexShaderEntryPoint,
 			string pixelShaderEntryPoint, D3D11.InputElement[] elements)
 		{
-			if (device == null || elements == null)
+			if (device == null)
 			{
 				throw new ArgumentNullException("device");
 			}
